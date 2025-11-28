@@ -7,30 +7,30 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.android_native_features_showcase.R;
-import com.example.android_native_features_showcase.data.repository.AccelerometerRepositoryImpl;
-import com.example.android_native_features_showcase.data.sensor.AndroidAccelerometerSensor;
-import com.example.android_native_features_showcase.domain.usecase.GetAccelerometerData;
+import com.example.android_native_features_showcase.data.repository.GyroscopeRepositoryImpl;
+import com.example.android_native_features_showcase.data.sensor.AndroidGyroscopeSensor;
+import com.example.android_native_features_showcase.domain.usecase.GetGyroscopeData;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AccelerometerViewModel viewModel;
-    private TextView accelerometerDataTextView;
+    private GyroscopeViewModel viewModel;
+    private TextView gyroscopeDataTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        accelerometerDataTextView = findViewById(R.id.accelerometer_data);
+        gyroscopeDataTextView = findViewById(R.id.gyroscope_data);
 
-        AndroidAccelerometerSensor androidAccelerometerSensor = new AndroidAccelerometerSensor(this);
-        AccelerometerRepositoryImpl accelerometerRepository = new AccelerometerRepositoryImpl(androidAccelerometerSensor);
-        GetAccelerometerData getAccelerometerData = new GetAccelerometerData(accelerometerRepository);
-        AccelerometerViewModelFactory factory = new AccelerometerViewModelFactory(getAccelerometerData);
-        viewModel = new ViewModelProvider(this, factory).get(AccelerometerViewModel.class);
+        AndroidGyroscopeSensor androidGyroscopeSensor = new AndroidGyroscopeSensor(this);
+        GyroscopeRepositoryImpl gyroscopeRepository = new GyroscopeRepositoryImpl(androidGyroscopeSensor);
+        GetGyroscopeData getGyroscopeData = new GetGyroscopeData(gyroscopeRepository);
+        GyroscopeViewModelFactory factory = new GyroscopeViewModelFactory(getGyroscopeData);
+        viewModel = new ViewModelProvider(this, factory).get(GyroscopeViewModel.class);
 
-        viewModel.getAccelerometerData().observe(this, data -> {
-            accelerometerDataTextView.setText(data);
+        viewModel.getGyroscopeData().observe(this, data -> {
+            gyroscopeDataTextView.setText(data);
         });
     }
 }
