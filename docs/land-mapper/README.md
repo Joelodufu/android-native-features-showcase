@@ -1,16 +1,30 @@
-# Land Mapper
+# Land Mapper (Solution Day 1)
 
-## Concept Brief
+## Description
+A solution-centric feature to map land areas using GPS.
 
-The Land Mapper feature is designed to provide users with an intuitive and interactive way to explore, map, and analyze land data using native Android capabilities. It aims to leverage device sensors, GPS, and mapping APIs to deliver a seamless experience for land surveying, property boundary identification, and geographic data visualization.
+## Features Implemented
+- Real-time location tracking
+- Recording tracks (start/stop)
+- Saving to local database
+- Viewing live stats (distance, time, points)
 
-## Day-1 Plan
+## Architecture
+Clean Architecture (Domain, Data, Presentation).
 
-1. Set up the project structure for the Land Mapper feature.
-2. Integrate basic map view using Google Maps or Mapbox SDK.
-3. Implement GPS location tracking to show the user's current position on the map.
-4. Add UI components for zooming, panning, and map type selection.
-5. Research and plan for offline map capabilities and data caching.
-6. Document the initial setup and usage instructions in the README.
+## Tech Stack
+- Room Database
+- Fused Location Provider
+- ViewModel
+- LiveData
 
-This plan sets the foundation for further development and iteration of the Land Mapper feature.
+## How to Test
+1. Open the app.
+2. Grant location permissions.
+3. Click "Start Recording" to begin tracking.
+4. Walk around to generate points.
+5. Click "Stop Recording" to save the track.
+6. Observe stats updating in real-time.
+
+## Note
+This is the initial "Day 1" implementation focusing on the core recording engine. Visualization on a map (Google Maps) and export features will follow.
