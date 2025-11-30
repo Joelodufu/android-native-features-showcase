@@ -1,30 +1,21 @@
-# Land Mapper (Solution Day 1)
+# Land Mapper (Solution Day 2)
 
-## Description
-A solution-centric feature to map land areas using GPS.
+## Features Added (Day 2):
+- Google Maps Integration: Visualizes the tracked path on a map using a Polyline.
+- Export Functionality: Converts the recorded track to GeoJSON format and allows sharing via system intent (email, drive, etc.).
 
-## Features Implemented
-- Real-time location tracking
-- Recording tracks (start/stop)
-- Saving to local database
-- Viewing live stats (distance, time, points)
+## Tech Stack Additions:
+- Google Maps SDK for Android
+- Intent system
 
-## Architecture
-Clean Architecture (Domain, Data, Presentation).
-
-## Tech Stack
-- Room Database
-- Fused Location Provider
-- ViewModel
-- LiveData
-
-## How to Test
+## How to Test (Updated):
 1. Open the app.
 2. Grant location permissions.
-3. Click "Start Recording" to begin tracking.
-4. Walk around to generate points.
-5. Click "Stop Recording" to save the track.
-6. Observe stats updating in real-time.
+3. The map should appear showing your current location (blue dot).
+4. Click "Start Recording" and walk around.
+5. A red line (polyline) will be drawn on the map following your path.
+6. Click "Stop Recording".
+7. Click "Export" to share the track as a GeoJSON text snippet.
 
-## Note
-This is the initial "Day 1" implementation focusing on the core recording engine. Visualization on a map (Google Maps) and export features will follow.
+## Note:
+Day 2 completes the core functional MVP. Future improvements could include background service refinement or UI polish.
