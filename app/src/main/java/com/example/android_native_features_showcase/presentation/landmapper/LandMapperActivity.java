@@ -1,69 +1,99 @@
 package com.example.android_native_features_showcase.presentation.landmapper;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import android.widget.Button;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
-import com.example.android_native_features_showcase.databinding.ActivityLandMapperBinding;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class LandMapperActivity extends AppCompatActivity {
+import com.example.android_native_features_showcase.R;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
-    private ActivityLandMapperBinding binding;
+import java.util.List;
+
+public class LandMapperActivity extends AppCompatActivity implements OnMapReadyCallback {
+
+    private GoogleMap map;
     private LandMapperViewModel viewModel;
-
-    private ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    viewModel.onLocationPermissionGranted();
-                } else {
-                    viewModel.onLocationPermissionDenied();
-                }
-            });
+    private Polyline currentPolyline;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityLandMapperBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        setContentView(R.layout.activity_land_mapper);
 
-        LandMapperViewModel.Factory factory = new LandMapperViewModel.Factory(getApplication());
-        viewModel = new ViewModelProvider(this, factory).get(LandMapperViewModel.class);
+        viewModel = new ViewModelProvider(this).get(LandMapperViewModel.class);
 
-        observeViewModel();
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
 
-        checkLocationPermissionAndRequestIfNeeded();
-    }
+        Button btnExport = findViewById(R.id.btn_export);
+        btnExport.setOnClickListener(v -> viewModel.exportCurrentTrack());
 
-    private void observeViewModel() {
-        viewModel.getState().observe(this, state -> {
-            // Update UI based on state
-            binding.textViewStatus.setText(state.getStatusMessage());
-            // Add more UI updates as needed
+        viewModel.getExportedTrack().observe(this, geoJson -> {
+            if (geoJson != null && !geoJson.isEmpty()) {
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("application/json");
+                shareIntent.putExtra(Intent.EXTRA_TEXT, geoJson);
+                startActivity(Intent.createChooser(shareIntent, "Share GeoJSON"));
+            }
+        });
+
+        viewModel.getTrackPoints().observe(this, trackPoints -> {
+            if (map == null || trackPoints == null || trackPoints.isEmpty()) return;
+
+            if (currentPolyline != null) {
+                currentPolyline.remove();
+            }
+
+            PolylineOptions polylineOptions = new PolylineOptions();
+            for (LatLng point : trackPoints) {
+                polylineOptions.add(point);
+            }
+
+            currentPolyline = map.addPolyline(polylineOptions);
+
+            LatLng lastPoint = trackPoints.get(trackPoints.size() - 1);
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(lastPoint, 15f));
         });
     }
 
-    private void checkLocationPermissionAndRequestIfNeeded() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            viewModel.onLocationPermissionGranted();
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        map = googleMap;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map.setMyLocationEnabled(true);
         } else {
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 0) {
+        if (requestCode == 1) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                viewModel.onLocationPermissionGranted();
-            } else {
-                viewModel.onLocationPermissionDenied();
+                if (map != null) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        map.setMyLocationEnabled(true);
+                    }
+                }
             }
         }
     }
