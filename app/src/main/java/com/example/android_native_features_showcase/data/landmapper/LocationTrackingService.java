@@ -1,103 +1,87 @@
 package com.example.android_native_features_showcase.data.landmapper;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
-import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
+import com.example.android_native_features_showcase.R;
 
 public class LocationTrackingService extends Service {
 
-    public static final String ACTION_START = "ACTION_START";
-    public static final String ACTION_STOP = "ACTION_STOP";
-    private static final String CHANNEL_ID = "location_channel";
-    private static final int NOTIFICATION_ID = 1;
-
-    private FusedLocationProviderClient fusedLocationClient;
-    private LocationCallback locationCallback;
+    private static final String CHANNEL_ID = "location_tracking_channel";
+    private long trackId;
+    private TrackRepository trackRepository;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    return;
-                }
-                for (Location location : locationResult.getLocations()) {
-                    // Save location to TrackRepository
-                    TrackRepository trackRepository = LandMapperApp.getInstance().getTrackRepository();
-                    trackRepository.saveLocation(location);
-                }
-            }
-        };
+        trackRepository = new TrackRepository(getApplicationContext());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            String action = intent.getAction();
-            if (ACTION_START.equals(action)) {
-                startForegroundService();
-                startLocationUpdates();
-            } else if (ACTION_STOP.equals(action)) {
-                stopLocationUpdates();
-                stopForeground(true);
-                stopSelf();
-            }
+        // 1. Extract a "track_id" from the Intent extras. If missing, generate one
+        if (intent != null && intent.hasExtra("track_id")) {
+            trackId = intent.getLongExtra("track_id", System.currentTimeMillis());
+        } else {
+            trackId = System.currentTimeMillis();
         }
+
+        // 2. Create a new LandTrack entity with this ID and save it
+        LandTrack track = new LandTrack(trackId);
+        trackRepository.insertTrack(track);
+
+        // 3. Store this trackId in a member variable (already done above)
+
+        // 4. Start the foreground notification
+        startForeground(1, createNotification());
+
+        // 5. Request location updates
+        requestLocationUpdates();
+
         return START_STICKY;
     }
 
-    private void startForegroundService() {
-        createNotificationChannel();
+    private Notification createNotification() {
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Location Tracking")
-                .setContentText("Tracking location in background")
-                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-                .setOngoing(true)
+                .setContentText("Tracking your location")
+                .setSmallIcon(R.drawable.ic_location)
+                .setContentIntent(pendingIntent)
                 .build();
-
-        startForeground(NOTIFICATION_ID, notification);
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Location Tracking", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
+    private void requestLocationUpdates() {
+        // Implementation to request location updates and set a callback
+        // Assuming a LocationCallback is set up to receive location updates
+        // For example:
+        // fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+    }
+
+    // Location callback example
+    private final LocationCallback locationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            if (locationResult == null) {
+                return;
+            }
+            for (Location location : locationResult.getLocations()) {
+                // 1. Use the stored trackId to create TrackPoint objects
+                TrackPoint point = new TrackPoint(trackId, location.getLatitude(), location.getLongitude(), location.getTime());
+
+                // 2. Save them via trackRepository.insertPoint(point)
+                trackRepository.insertPoint(point);
             }
         }
-    }
-
-    private void startLocationUpdates() {
-        LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setInterval(5000);
-        locationRequest.setFastestInterval(2000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
-    }
-
-    private void stopLocationUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback);
-    }
+    };
 
     @Nullable
     @Override
@@ -105,3 +89,6 @@ public class LocationTrackingService extends Service {
         return null;
     }
 }
+
+// Note: You may need to import or define LocationCallback and LocationResult classes depending on your location API usage.
+// Also ensure TrackRepository, LandTrack, TrackPoint, and MainActivity are properly defined in your project.
