@@ -1,99 +1,61 @@
 package com.example.android_native_features_showcase.presentation;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.lifecycle.ViewModelProvider;
-
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.android_native_features_showcase.R;
-import com.example.android_native_features_showcase.viewmodel.RecorderViewModel;
+import com.example.android_native_features_showcase.data.RecordingAdapter;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RecorderActivity extends AppCompatActivity {
 
-    private RecorderViewModel recorderViewModel;
-    private Button recordButton;
-    private boolean isRecording = false;
-
-    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private RecyclerView recyclerView;
+    private RecordingAdapter recordingAdapter;
+    private List<String> recordings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recorder);
 
-        recorderViewModel = new ViewModelProvider(this).get(RecorderViewModel.class);
+        // Initialize recordings list
+        recordings = new ArrayList<>();
 
-        recordButton = findViewById(R.id.record_button);
+        // Initialize RecyclerView
+        recyclerView = findViewById(R.id.recyclerViewRecordings);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Setup permission request launcher
-        requestPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        startOrStopRecording();
-                    } else {
-                        Toast.makeText(this, "Permission denied. Cannot record audio.", Toast.LENGTH_SHORT).show();
-                    }
+        // Initialize adapter
+        recordingAdapter = new RecordingAdapter(recordings);
+        recyclerView.setAdapter(recordingAdapter);
+
+        // Load recordings from local storage
+        loadRecordings();
+
+        // Existing functionality here (if any) should remain intact
+    }
+
+    // Method to load recordings from local storage
+    private void loadRecordings() {
+        File recordingsDir = getFilesDir();
+        File[] files = recordingsDir.listFiles();
+        recordings.clear();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    recordings.add(file.getName());
                 }
-        );
-
-        recordButton.setOnClickListener(v -> {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                    == PackageManager.PERMISSION_GRANTED) {
-                startOrStopRecording();
-            } else {
-                requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
-            }
-        });
-
-        // Observe recording state from ViewModel
-        recorderViewModel.getIsRecording().observe(this, isRecording -> {
-            this.isRecording = isRecording;
-            updateUI();
-        });
-
-        // Observe any error messages
-        recorderViewModel.getErrorMessage().observe(this, errorMessage -> {
-            if (errorMessage != null && !errorMessage.isEmpty()) {
-                Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void startOrStopRecording() {
-        if (isRecording) {
-            recorderViewModel.stopRecording();
-        } else {
-            recorderViewModel.startRecording();
-        }
-    }
-
-    private void updateUI() {
-        if (isRecording) {
-            recordButton.setText(R.string.stop_recording);
-        } else {
-            recordButton.setText(R.string.start_recording);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 0) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startOrStopRecording();
-            } else {
-                Toast.makeText(this, "Permission denied. Cannot record audio.", Toast.LENGTH_SHORT).show();
             }
         }
+        recordingAdapter.notifyDataSetChanged();
     }
+
+    // Call this method when new recordings are created to update the adapter
+    public void updateRecordings() {
+        loadRecordings();
+    }
+
 }
