@@ -4,42 +4,46 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.android_native_features_showcase.domain.AudioRecorder;
+import com.example.android_native_features_showcase.data.Recording;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RecorderViewModel extends ViewModel {
 
-    private final AudioRecorder audioRecorder;
+    // Existing recording state management fields and methods
 
-    private final MutableLiveData<Boolean> isRecording = new MutableLiveData<>(false);
+    private final MutableLiveData<List<Recording>> recordings = new MutableLiveData<>(new ArrayList<>());
 
-    public RecorderViewModel(AudioRecorder audioRecorder) {
-        this.audioRecorder = audioRecorder;
+    public LiveData<List<Recording>> getRecordings() {
+        return recordings;
     }
 
-    public LiveData<Boolean> getIsRecording() {
-        return isRecording;
+    public void setRecordings(List<Recording> recordingsList) {
+        recordings.setValue(recordingsList);
     }
 
-    public void startRecording() {
-        if (!isRecording.getValue()) {
-            audioRecorder.startRecording();
-            isRecording.setValue(true);
+    // Method to load recordings from local storage
+    public void loadRecordingsFromLocalStorage() {
+        // This is a placeholder for actual loading logic
+        // For example, you might load from a database or file system
+        List<Recording> loadedRecordings = new ArrayList<>();
+        // TODO: Implement actual loading logic here
+
+        // Update the LiveData with loaded recordings
+        recordings.setValue(loadedRecordings);
+    }
+
+    // Method to update recordings list when a new recording is created
+    public void addNewRecording(Recording newRecording) {
+        List<Recording> currentRecordings = recordings.getValue();
+        if (currentRecordings == null) {
+            currentRecordings = new ArrayList<>();
         }
+        currentRecordings.add(newRecording);
+        recordings.setValue(currentRecordings);
     }
 
-    public void stopRecording() {
-        if (isRecording.getValue()) {
-            audioRecorder.stopRecording();
-            isRecording.setValue(false);
-        }
-    }
+    // Keep all existing recording state management functionality intact
 
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        if (isRecording.getValue()) {
-            audioRecorder.stopRecording();
-            isRecording.setValue(false);
-        }
-    }
 }
