@@ -9,19 +9,20 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_native_features_showcase.R;
-import com.example.android_native_features_showcase.model.Recording;
+import com.example.android_native_features_showcase.data.database.RecordingEntity;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class RecordingAdapter extends RecyclerView.Adapter<RecordingAdapter.RecordingViewHolder> {
 
-    private List<Recording> recordings;
+    private List<RecordingEntity> recordings = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
-    public void setRecordings(List<Recording> recordings) {
+    public void setRecordings(List<RecordingEntity> recordings) {
         this.recordings = recordings;
         notifyDataSetChanged();
     }
@@ -36,13 +37,16 @@ public class RecordingAdapter extends RecyclerView.Adapter<RecordingAdapter.Reco
 
     @Override
     public void onBindViewHolder(@NonNull RecordingViewHolder holder, int position) {
-        Recording recording = recordings.get(position);
+        RecordingEntity recording = recordings.get(position);
         holder.fileNameTextView.setText(recording.getFileName());
 
         // Format the date/time
         Date date = new Date(recording.getTimestamp());
         String formattedDate = dateFormat.format(date);
-        holder.dateTimeTextView.setText(formattedDate);
+        
+        // Show upload status
+        String status = recording.isUploaded() ? " (Uploaded)" : " (Pending)";
+        holder.dateTimeTextView.setText(formattedDate + status);
     }
 
     @Override
