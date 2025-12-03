@@ -9,14 +9,21 @@ import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import com.example.android_native_features_showcase.data.database.RecordingEntity;
+import com.example.android_native_features_showcase.data.repository.RecordingRepository;
 import com.example.android_native_features_showcase.workers.UploadWorker;
 
+import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class AudioRecordingService extends Service {
 
     private MediaRecorder recorder;
     private String outputFilePath;
+    private long startTime;
 
     @Nullable
     @Override
@@ -36,12 +43,17 @@ public class AudioRecordingService extends Service {
         recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
-        outputFilePath = getExternalCacheDir().getAbsolutePath() + "/audiorecordtest.3gp";
+        // Create a unique file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = "REC_" + timeStamp + ".3gp";
+        outputFilePath = getExternalCacheDir().getAbsolutePath() + "/" + fileName;
+        
         recorder.setOutputFile(outputFilePath);
 
         try {
             recorder.prepare();
             recorder.start();
+            startTime = System.currentTimeMillis();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -52,21 +64,29 @@ public class AudioRecordingService extends Service {
             try {
                 recorder.stop();
             } catch (RuntimeException stopException) {
-                // Handle stop failure
                 stopException.printStackTrace();
             }
             recorder.release();
             recorder = null;
 
+            long duration = System.currentTimeMillis() - startTime;
+            File file = new File(outputFilePath);
+            String fileName = file.getName();
+
+            // Save to Database
+            RecordingRepository repository = new RecordingRepository(getApplication());
+            RecordingEntity recording = new RecordingEntity(outputFilePath, fileName, duration, System.currentTimeMillis());
+            repository.insert(recording);
+
             // Create Data object with output file path
             Data uploadData = new Data.Builder()
-                .putString("file_path", outputFilePath)
-                .build();
+                    .putString(UploadWorker.KEY_FILE_PATH, outputFilePath)
+                    .build();
 
             // Create OneTimeWorkRequest for UploadWorker
             OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(UploadWorker.class)
-                .setInputData(uploadData)
-                .build();
+                    .setInputData(uploadData)
+                    .build();
 
             // Enqueue the work
             WorkManager.getInstance(this).enqueue(uploadWorkRequest);
