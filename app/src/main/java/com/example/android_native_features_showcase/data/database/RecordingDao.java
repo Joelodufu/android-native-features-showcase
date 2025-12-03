@@ -1,5 +1,6 @@
 package com.example.android_native_features_showcase.data.database;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -11,10 +12,10 @@ import java.util.List;
 @Dao
 public interface RecordingDao {
     @Query("SELECT * FROM recordings ORDER BY timestamp DESC")
-    List<RecordingEntity> getAllRecordings();
+    LiveData<List<RecordingEntity>> getAllRecordings();
 
     @Query("SELECT * FROM recordings WHERE is_uploaded = 0")
-    List<RecordingEntity> getPendingUploads();
+    LiveData<List<RecordingEntity>> getPendingUploads();
 
     @Insert
     void insert(RecordingEntity recording);
