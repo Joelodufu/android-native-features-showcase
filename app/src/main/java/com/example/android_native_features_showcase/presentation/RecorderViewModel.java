@@ -1,49 +1,36 @@
 package com.example.android_native_features_showcase.presentation;
 
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
-import com.example.android_native_features_showcase.data.Recording;
+import com.example.android_native_features_showcase.data.database.RecordingEntity;
+import com.example.android_native_features_showcase.data.repository.RecordingRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class RecorderViewModel extends ViewModel {
+public class RecorderViewModel extends AndroidViewModel {
 
-    // Existing recording state management fields and methods
+    private RecordingRepository repository;
+    private final LiveData<List<RecordingEntity>> allRecordings;
 
-    private final MutableLiveData<List<Recording>> recordings = new MutableLiveData<>(new ArrayList<>());
-
-    public LiveData<List<Recording>> getRecordings() {
-        return recordings;
+    public RecorderViewModel(@NonNull Application application) {
+        super(application);
+        repository = new RecordingRepository(application);
+        allRecordings = repository.getAllRecordings();
     }
 
-    public void setRecordings(List<Recording> recordingsList) {
-        recordings.setValue(recordingsList);
+    public LiveData<List<RecordingEntity>> getRecordings() {
+        return allRecordings;
     }
 
-    // Method to load recordings from local storage
-    public void loadRecordingsFromLocalStorage() {
-        // This is a placeholder for actual loading logic
-        // For example, you might load from a database or file system
-        List<Recording> loadedRecordings = new ArrayList<>();
-        // TODO: Implement actual loading logic here
-
-        // Update the LiveData with loaded recordings
-        recordings.setValue(loadedRecordings);
+    public void insert(RecordingEntity recording) {
+        repository.insert(recording);
     }
-
-    // Method to update recordings list when a new recording is created
-    public void addNewRecording(Recording newRecording) {
-        List<Recording> currentRecordings = recordings.getValue();
-        if (currentRecordings == null) {
-            currentRecordings = new ArrayList<>();
-        }
-        currentRecordings.add(newRecording);
-        recordings.setValue(currentRecordings);
+    
+    public void delete(RecordingEntity recording) {
+        repository.delete(recording);
     }
-
-    // Keep all existing recording state management functionality intact
-
 }
