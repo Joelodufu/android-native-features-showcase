@@ -15,7 +15,7 @@ public interface RecordingDao {
     LiveData<List<RecordingEntity>> getAllRecordings();
 
     @Query("SELECT * FROM recordings WHERE is_uploaded = 0")
-    LiveData<List<RecordingEntity>> getPendingUploads();
+    List<RecordingEntity> getPendingUploads();
 
     @Insert
     void insert(RecordingEntity recording);
@@ -28,4 +28,7 @@ public interface RecordingDao {
     
     @Query("UPDATE recordings SET is_uploaded = 1, cloudinary_url = :url WHERE id = :id")
     void markAsUploaded(int id, String url);
+
+    @Query("UPDATE recordings SET is_uploaded = 1, cloudinary_url = :url WHERE file_path = :filePath")
+    void markAsUploadedByFilePath(String filePath, String url);
 }
