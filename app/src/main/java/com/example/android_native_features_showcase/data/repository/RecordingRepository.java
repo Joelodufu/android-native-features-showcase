@@ -51,4 +51,10 @@ public class RecordingRepository {
             recordingDao.markAsUploaded(id, url);
         });
     }
+
+    public void markAsUploadedByFilePath(String filePath, String url) {
+        executorService.execute(() -> {
+            recordingDao.markAsUploadedByFilePath(filePath, url);
+        });
+    }
 }
